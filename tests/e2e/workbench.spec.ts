@@ -23,6 +23,10 @@ test("renders the workbench and keeps graph, role, source, and year views linked
 
   await page.locator('[data-node-id="data-engineer"]').click();
   await expect(page.locator(".decision-panel")).toHaveAttribute("data-active-role", "data-engineer");
+  await expect(page.locator(".decision-panel")).toHaveAttribute("data-sync-pulse", "1");
+  await expect(page.locator(".graph-panel")).toHaveAttribute("data-sync-pulse", "1");
+  await expect(page.locator(".evolution-panel")).toHaveAttribute("data-sync-pulse", "1");
+  await expect(page.locator('.role-card[data-role-id="data-engineer"]')).toHaveClass(/is-active/);
   await expect(page.locator('.heatmap-row[data-role-id="data-engineer"] .heatmap-cell').first()).toHaveClass(/is-active/);
   await expect(page.locator('[data-node-id="ai-pm"]')).toHaveClass(/is-dim/);
   await expect(page.locator('[data-node-id="etl"]')).not.toHaveClass(/is-dim/);

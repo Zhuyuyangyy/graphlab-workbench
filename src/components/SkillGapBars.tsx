@@ -3,11 +3,13 @@ import type { RoleProfile } from "../types/domain";
 
 interface SkillGapBarsProps {
   role: RoleProfile;
+  syncPulse: number;
 }
 
-export function SkillGapBars({ role }: SkillGapBarsProps) {
+export function SkillGapBars({ role, syncPulse }: SkillGapBarsProps) {
   return (
-    <div className="gap-bars" aria-label={`${role.name} 能力缺口分析`}>
+    <div className="gap-bars" aria-label={`${role.name} 能力缺口分析`} data-sync-pulse={syncPulse}>
+      <span className="sync-beacon gap-sync" key={`gap-${syncPulse}`} aria-hidden="true" />
       <div className="viz-heading">
         <span>Gap Analysis</span>
         <strong>能力缺口</strong>

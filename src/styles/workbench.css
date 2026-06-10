@@ -763,6 +763,7 @@ h1 {
 
 .heatmap-row strong.is-active {
   color: var(--role);
+  background: oklch(52% 0.15 33 / 0.075);
   box-shadow: inset 4px 0 0 var(--role);
 }
 
@@ -785,6 +786,7 @@ h1 {
 .heatmap-cell.is-active {
   transform: translateY(-1px);
   box-shadow: inset 0 0 0 2px oklch(52% 0.15 33 / 0.22);
+  animation: heatmap-sync 280ms var(--ease) 220ms both;
 }
 
 .flow-chart {
@@ -853,6 +855,7 @@ h1 {
 }
 
 .role-card {
+  position: relative;
   width: 100%;
   min-height: 72px;
   display: grid;
@@ -865,13 +868,34 @@ h1 {
   color: var(--ink);
   text-align: left;
   transition: 180ms var(--ease);
+  overflow: hidden;
 }
 
 .role-card:hover,
 .role-card.is-active {
-  border-color: oklch(22% 0.012 82 / 0.46);
+  border-color: oklch(52% 0.15 33 / 0.46);
   background: oklch(98% 0.008 86 / 0.95);
-  box-shadow: 4px 4px 0 oklch(53% 0.105 205 / 0.13);
+  box-shadow: 4px 4px 0 oklch(52% 0.15 33 / 0.14);
+}
+
+.role-card::after {
+  content: "";
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  width: 7px;
+  height: 7px;
+  border-top: 1px solid oklch(52% 0.15 33 / 0.56);
+  border-right: 1px solid oklch(52% 0.15 33 / 0.56);
+  opacity: 0;
+  transform: translate(-4px, 4px);
+  transition: 180ms var(--ease);
+}
+
+.role-card:hover::after,
+.role-card.is-active::after {
+  opacity: 1;
+  transform: translate(0, 0);
 }
 
 .role-card strong {
@@ -899,15 +923,19 @@ h1 {
 }
 
 .ability-card {
+  position: relative;
   margin-top: 14px;
   padding: 12px;
   border: 1px solid oklch(22% 0.012 82 / 0.1);
   background: oklch(94% 0.014 84 / 0.32);
   animation: linked-pop 260ms var(--ease);
+  overflow: hidden;
 }
 
 .gap-bars {
+  position: relative;
   padding-bottom: 12px;
+  overflow: hidden;
 }
 
 .gap-row {
@@ -957,6 +985,7 @@ h1 {
 }
 
 .ability-head strong {
+  color: var(--role);
   font-size: 15px;
 }
 
@@ -1014,6 +1043,7 @@ h1 {
 }
 
 .timeline-canvas {
+  position: relative;
   margin-top: 18px;
   overflow: hidden;
   border: 1px solid var(--line);
@@ -1136,6 +1166,7 @@ h1 {
 }
 
 .graph-node.is-active-role .node-circle {
+  filter: drop-shadow(0 12px 18px oklch(52% 0.15 33 / 0.24));
   stroke-width: 3.4;
 }
 
@@ -1194,6 +1225,46 @@ h1 {
   opacity: 0.5;
   transform-origin: center;
   animation: pulse 1.6s var(--ease) infinite;
+}
+
+.sync-beacon {
+  position: absolute;
+  pointer-events: none;
+}
+
+.role-sync {
+  inset: 0;
+  background: linear-gradient(90deg, transparent, oklch(52% 0.15 33 / 0.16), transparent);
+  transform: translateX(-120%);
+  animation: sync-sweep 260ms var(--ease) both;
+}
+
+.graph-sync,
+.radar-sync,
+.gap-sync,
+.trend-sync {
+  inset: 0;
+  border: 1px solid oklch(52% 0.15 33 / 0.34);
+  background:
+    linear-gradient(90deg, transparent, oklch(52% 0.15 33 / 0.12), transparent),
+    oklch(52% 0.15 33 / 0.035);
+  opacity: 0;
+}
+
+.graph-sync {
+  animation: sync-panel 300ms var(--ease) 70ms both;
+}
+
+.radar-sync {
+  animation: sync-panel 280ms var(--ease) 140ms both;
+}
+
+.gap-sync {
+  animation: sync-panel 280ms var(--ease) 180ms both;
+}
+
+.trend-sync {
+  animation: sync-panel 320ms var(--ease) 300ms both;
 }
 
 .drawer-layer {
@@ -1488,6 +1559,43 @@ h1 {
   100% {
     opacity: 1;
     transform: scale(1);
+  }
+}
+
+@keyframes sync-sweep {
+  0% {
+    transform: translateX(-120%);
+  }
+
+  100% {
+    transform: translateX(120%);
+  }
+}
+
+@keyframes sync-panel {
+  0% {
+    opacity: 0;
+    transform: scale(0.99);
+  }
+
+  42% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(1);
+  }
+}
+
+@keyframes heatmap-sync {
+  0% {
+    background-color: oklch(52% 0.15 33 / 0.16);
+  }
+
+  100% {
+    background-color: transparent;
   }
 }
 

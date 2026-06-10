@@ -41,6 +41,7 @@ export function App() {
   const demoStepRef = useRef(0);
   const [demoStepLabel, setDemoStepLabel] = useState("Ready");
   const [drilldownNodeId, setDrilldownNodeId] = useState<string | null>(null);
+  const [syncPulse, setSyncPulse] = useState(0);
   const {
     activeRole,
     activeSources,
@@ -70,7 +71,10 @@ export function App() {
     const timers = demoFrames.map((frame, index) => window.setTimeout(() => {
       demoStepRef.current = index;
       setDemoStepLabel(frame.label);
-      if (frame.roleId) setActiveRoleId(frame.roleId);
+      if (frame.roleId) {
+        setActiveRoleId(frame.roleId);
+        setSyncPulse((current) => current + 1);
+      }
       if (frame.sourceIds) setActiveSources(new Set(frame.sourceIds));
       if (frame.year) setYear(frame.year);
       setDrilldownNodeId(null);
@@ -95,11 +99,13 @@ export function App() {
     setIsDemoRunning(false);
     setDemoStepLabel("Ready");
     setDrilldownNodeId(null);
+    setSyncPulse((current) => current + 1);
   }
 
   function selectRole(roleId: RoleId) {
     setActiveRoleId(roleId);
     setDrilldownNodeId(null);
+    setSyncPulse((current) => current + 1);
   }
 
   return (
@@ -129,11 +135,12 @@ export function App() {
               drilldownNodeId={drilldownNodeId}
               onOpenDrilldown={setDrilldownNodeId}
               onSelectRole={selectRole}
+              syncPulse={syncPulse}
               year={year}
             />
-            <DecisionPanel activeRole={activeRole} onSelectRole={selectRole} roles={roles} />
+            <DecisionPanel activeRole={activeRole} onSelectRole={selectRole} roles={roles} syncPulse={syncPulse} />
           </section>
-          <EvolutionReview onYearChange={setYear} trendSummary={trendSummary} year={year} />
+          <EvolutionReview onYearChange={setYear} syncPulse={syncPulse} trendSummary={trendSummary} year={year} />
         </main>
       </div>
       <EvidenceDrawer drilldown={drilldown} onClose={() => setDrilldownNodeId(null)} onSelectRole={selectRole} />

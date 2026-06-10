@@ -11,6 +11,7 @@ interface KnowledgeGraphProps {
   drilldownNodeId: string | null;
   onOpenDrilldown: (nodeId: string) => void;
   onSelectRole: (roleId: RoleId) => void;
+  syncPulse: number;
   year: number;
 }
 
@@ -75,6 +76,7 @@ export function KnowledgeGraph({
   drilldownNodeId,
   onOpenDrilldown,
   onSelectRole,
+  syncPulse,
   year,
 }: KnowledgeGraphProps) {
   const svgRef = useRef<SVGSVGElement | null>(null);
@@ -115,7 +117,7 @@ export function KnowledgeGraph({
   }
 
   return (
-    <article className="graph-panel" id="graph">
+    <article className="graph-panel" id="graph" data-sync-pulse={syncPulse}>
       <div className="panel-heading graph-heading">
         <div>
           <span>Reasoning Canvas</span>
@@ -128,6 +130,7 @@ export function KnowledgeGraph({
         </div>
       </div>
       <div className="graph-stage">
+        <span className="sync-beacon graph-sync" key={`graph-${syncPulse}`} aria-hidden="true" />
         <svg
           id="knowledge-graph"
           ref={svgRef}
@@ -227,7 +230,7 @@ export function KnowledgeGraph({
           <strong>2024 后“场景产品化”增速超过传统工具技能。</strong>
         </div>
       </div>
-      <AbilityHeatmap activeRoleId={activeRole.id} />
+      <AbilityHeatmap activeRoleId={activeRole.id} syncPulse={syncPulse} />
       <EvidenceFlowChart activeRoleId={activeRole.id} activeSources={activeSources} />
     </article>
   );

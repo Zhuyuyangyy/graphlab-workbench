@@ -5,14 +5,15 @@ import { TrendChart } from "./TrendChart";
 
 interface EvolutionReviewProps {
   onYearChange: (year: number) => void;
+  syncPulse: number;
   trendSummary: TrendSummaryItem[];
   year: number;
 }
 
-export function EvolutionReview({ onYearChange, trendSummary, year }: EvolutionReviewProps) {
+export function EvolutionReview({ onYearChange, syncPulse, trendSummary, year }: EvolutionReviewProps) {
   return (
     <section className="review-grid" id="evolution">
-      <article className="evolution-panel">
+      <article className="evolution-panel" data-sync-pulse={syncPulse}>
         <div className="panel-heading review-heading">
           <div>
             <span>Evolution Review</span>
@@ -32,6 +33,7 @@ export function EvolutionReview({ onYearChange, trendSummary, year }: EvolutionR
           </label>
         </div>
         <div className="timeline-canvas">
+          <span className="sync-beacon trend-sync" key={`trend-${syncPulse}`} aria-hidden="true" />
           <TrendChart year={year} />
         </div>
         <div className="evolution-summary">
