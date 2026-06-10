@@ -9,6 +9,15 @@ interface EvidenceFlowChartProps {
 
 const capabilities = ["场景任务", "数据能力", "知识建模", "项目验证"];
 
+const sourceColors: Record<SourceId, string> = {
+  job: "#c4452d",
+  course: "#008f9b",
+  paper: "#6954a1",
+  contest: "#c69422",
+  resume: "#4f7b4a",
+  report: "#6e675d",
+};
+
 export function EvidenceFlowChart({ activeRoleId, activeSources }: EvidenceFlowChartProps) {
   const [hoveredFlowKey, setHoveredFlowKey] = useState<string | null>(null);
   const visibleFlows = evidenceFlows.filter((flow) => activeSources.has(flow.sourceId));
@@ -34,25 +43,37 @@ export function EvidenceFlowChart({ activeRoleId, activeSources }: EvidenceFlowC
             const y1 = 24 + sourceIndex * 34;
             const y2 = 42 + capabilityIndex * 48;
             const y3 = 50 + roleIndex * 58;
-            const width = Math.max(2, flow.value / 7);
+            const width = Math.max(3, flow.value / 6);
             const active = flow.roleId === activeRoleId;
             const isHovered = hoveredFlowKey === flowKey;
             const isMuted = hoveredFlowKey ? !isHovered : !active;
+            const path = `M 10 ${y1} C 150 ${y1}, 150 ${y2}, 280 ${y2} S 430 ${y3}, 550 ${y3}`;
+            const stroke = sourceColors[flow.sourceId];
             return (
               <g
                 key={flowKey}
                 className={`flow-path ${active ? "is-active" : ""} ${isHovered ? "is-hovered" : ""}`}
                 data-flow-active={active ? "true" : "false"}
+                data-source-id={flow.sourceId}
                 onPointerEnter={() => setHoveredFlowKey(flowKey)}
                 onPointerLeave={() => setHoveredFlowKey(null)}
               >
                 <path
-                  d={`M 10 ${y1} C 150 ${y1}, 150 ${y2}, 280 ${y2} S 430 ${y3}, 550 ${y3}`}
+                  className="flow-hitbox"
+                  d={path}
                   fill="none"
-                  stroke={isHovered || active ? "#c4452d" : "#8d877d"}
-                  strokeWidth={isHovered ? width + 2.6 : width}
+                  stroke="transparent"
+                  strokeWidth={width + 12}
                   strokeLinecap="round"
-                  opacity={isHovered ? 0.92 : isMuted ? 0.14 : 0.74}
+                />
+                <path
+                  className="flow-stroke"
+                  d={path}
+                  fill="none"
+                  stroke={isMuted ? "#8d877d" : stroke}
+                  strokeWidth={isHovered ? width + 3 : active ? width + 1 : width}
+                  strokeLinecap="round"
+                  opacity={isHovered ? 0.96 : isMuted ? 0.13 : 0.82}
                 />
               </g>
             );

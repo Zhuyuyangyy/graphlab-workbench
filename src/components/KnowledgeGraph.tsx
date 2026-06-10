@@ -40,12 +40,12 @@ function buildForceLayout() {
   const links = graphEdges.map(([source, target]) => ({ source, target }));
 
   forceSimulation(nodes)
-    .force("link", forceLink<LayoutNode, { source: string; target: string }>(links).id((node) => node.id).distance(92).strength(0.48))
-    .force("charge", forceManyBody().strength(-380))
-    .force("collide", forceCollide<LayoutNode>().radius((node) => node.r + 18).strength(0.92))
+    .force("link", forceLink<LayoutNode, { source: string; target: string }>(links).id((node) => node.id).distance(102).strength(0.48))
+    .force("charge", forceManyBody().strength(-430))
+    .force("collide", forceCollide<LayoutNode>().radius((node) => node.r + 22).strength(0.96))
     .force("center", forceCenter(460, 280))
     .stop()
-    .tick(220);
+    .tick(260);
 
   return nodes.map((node) => ({
     ...node,
@@ -67,6 +67,10 @@ function getSvgPoint(svg: SVGSVGElement, clientX: number, clientY: number) {
   const matrix = svg.getScreenCTM();
   if (!matrix) return point;
   return point.matrixTransform(matrix.inverse());
+}
+
+function clamp(value: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, value));
 }
 
 function getOneHopNodeIds(nodeId: string, activeSources: Set<SourceId>) {
@@ -104,6 +108,22 @@ export function KnowledgeGraph({
       return [node.id, { ...node, x: override?.x ?? node.x, y: override?.y ?? node.y }] as const;
     }));
   }, [layoutNodes, positionOverrides]);
+  const focusOffset = useMemo(() => {
+    const focusedNodes = Array.from(focusedIds)
+      .map((id) => positionById.get(id))
+      .filter((node): node is LayoutNode => Boolean(node));
+    if (focusedNodes.length === 0) return { x: 0, y: 0 };
+    const center = focusedNodes.reduce(
+      (sum, node) => ({ x: sum.x + node.x, y: sum.y + node.y }),
+      { x: 0, y: 0 },
+    );
+    center.x /= focusedNodes.length;
+    center.y /= focusedNodes.length;
+    return {
+      x: clamp(460 - center.x, -130, 130),
+      y: clamp(282 - center.y, -86, 86),
+    };
+  }, [focusedIds, positionById]);
   const neighborIds = useMemo(() => {
     if (!hoveredId) return new Set<string>();
     const related = new Set<string>([hoveredId]);
@@ -120,8 +140,8 @@ export function KnowledgeGraph({
     setPositionOverrides((current) => ({
       ...current,
       [draggingId]: {
-        x: Math.max(44, Math.min(876, point.x)),
-        y: Math.max(44, Math.min(516, point.y)),
+        x: clamp(point.x - focusOffset.x, 44, 876),
+        y: clamp(point.y - focusOffset.y, 44, 516),
       },
     }));
   }
@@ -158,6 +178,7 @@ export function KnowledgeGraph({
             setHoveredId(null);
           }}
         >
+          <g className="graph-viewport" transform={`translate(${focusOffset.x} ${focusOffset.y})`}>
           <g>
             {graphEdges.map(([fromId, toId]) => {
               const from = positionById.get(fromId);
@@ -222,6 +243,7 @@ export function KnowledgeGraph({
                 </g>
               );
             })}
+          </g>
           </g>
         </svg>
         <div className="graph-insight">

@@ -832,6 +832,10 @@ h1 {
   height: 660px;
 }
 
+.graph-viewport {
+  transition: transform 280ms var(--ease);
+}
+
 .graph-insight {
   position: absolute;
   right: 22px;
@@ -1102,8 +1106,17 @@ h1 {
   cursor: pointer;
 }
 
-.flow-path path {
-  transition: opacity 180ms var(--ease), stroke 180ms var(--ease), stroke-width 180ms var(--ease);
+.flow-stroke {
+  filter: drop-shadow(0 2px 0 oklch(20% 0.01 82 / 0.08));
+  transition: opacity 180ms var(--ease), stroke 180ms var(--ease), stroke-width 180ms var(--ease), filter 180ms var(--ease);
+}
+
+.flow-hitbox {
+  pointer-events: stroke;
+}
+
+.flow-path.is-hovered .flow-stroke {
+  filter: drop-shadow(0 4px 0 oklch(20% 0.01 82 / 0.12));
 }
 
 .flow-label {

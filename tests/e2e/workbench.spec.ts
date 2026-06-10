@@ -35,6 +35,9 @@ test("renders the workbench and keeps graph, role, source, and year views linked
   await expect(page.locator(".heatmap-panel")).toHaveCount(0);
   await page.getByRole("tab", { name: "热力矩阵" }).click();
   await expect(page.locator('.heatmap-row[data-role-id="data-engineer"] .heatmap-cell').first()).toHaveClass(/is-active/);
+  await page.getByRole("tab", { name: "证据流向" }).click();
+  await expect(page.locator('.flow-path[data-flow-active="true"] .flow-stroke').first()).toBeVisible();
+  await expect(page.locator('.flow-path[data-source-id="job"] .flow-stroke').first()).toBeVisible();
   await expect(page.locator('[data-node-id="ai-pm"]')).toHaveClass(/is-dim/);
   await expect(page.locator('[data-node-id="etl"]')).not.toHaveClass(/is-dim/);
 
