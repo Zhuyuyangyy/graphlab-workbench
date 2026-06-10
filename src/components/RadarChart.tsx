@@ -1,4 +1,5 @@
 interface RadarChartProps {
+  benchmark?: number[];
   labels: string[];
   values: number[];
 }
@@ -13,7 +14,7 @@ function polygonPoints(values: number[], centerX: number, centerY: number, radiu
     .join(" ");
 }
 
-export function RadarChart({ labels, values }: RadarChartProps) {
+export function RadarChart({ benchmark, labels, values }: RadarChartProps) {
   const center = { x: 130, y: 118 };
   const radius = 82;
 
@@ -47,7 +48,23 @@ export function RadarChart({ labels, values }: RadarChartProps) {
           </g>
         );
       })}
-      <polygon points={polygonPoints(values, center.x, center.y, radius)} fill="rgba(196, 69, 45, 0.22)" stroke="#c4452d" strokeWidth="3" />
+      {benchmark ? (
+        <polygon
+          className="radar-benchmark"
+          points={polygonPoints(benchmark, center.x, center.y, radius)}
+          fill="none"
+          stroke="#20211f"
+          strokeDasharray="7 6"
+          strokeWidth="2"
+        />
+      ) : null}
+      <polygon
+        className="radar-current"
+        points={polygonPoints(values, center.x, center.y, radius)}
+        fill="rgba(196, 69, 45, 0.22)"
+        stroke="#c4452d"
+        strokeWidth="3"
+      />
     </svg>
   );
 }

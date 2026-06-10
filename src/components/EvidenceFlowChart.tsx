@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { evidenceFlows, evidenceSources, roleProfiles } from "../data/workbench";
 import type { RoleId, SourceId } from "../types/domain";
 
@@ -9,6 +10,7 @@ interface EvidenceFlowChartProps {
 const capabilities = ["场景任务", "数据能力", "知识建模", "项目验证"];
 
 export function EvidenceFlowChart({ activeRoleId, activeSources }: EvidenceFlowChartProps) {
+  const [hoveredFlowKey, setHoveredFlowKey] = useState<string | null>(null);
   const visibleFlows = evidenceFlows.filter((flow) => activeSources.has(flow.sourceId));
 
   return (
@@ -25,6 +27,7 @@ export function EvidenceFlowChart({ activeRoleId, activeSources }: EvidenceFlowC
         </div>
         <svg viewBox="0 0 560 240" className="flow-canvas" role="img" aria-label="证据流向路径">
           {visibleFlows.map((flow, index) => {
+            const flowKey = `${flow.sourceId}-${flow.capability}-${flow.roleId}-${index}`;
             const sourceIndex = evidenceSources.findIndex((source) => source.id === flow.sourceId);
             const capabilityIndex = capabilities.indexOf(flow.capability);
             const roleIndex = roleProfiles.findIndex((role) => role.id === flow.roleId);
@@ -33,15 +36,23 @@ export function EvidenceFlowChart({ activeRoleId, activeSources }: EvidenceFlowC
             const y3 = 50 + roleIndex * 58;
             const width = Math.max(2, flow.value / 7);
             const active = flow.roleId === activeRoleId;
+            const isHovered = hoveredFlowKey === flowKey;
+            const isMuted = hoveredFlowKey ? !isHovered : !active;
             return (
-              <g key={`${flow.sourceId}-${flow.capability}-${flow.roleId}-${index}`} className={active ? "is-active" : "is-muted"}>
+              <g
+                key={flowKey}
+                className={`flow-path ${active ? "is-active" : ""} ${isHovered ? "is-hovered" : ""}`}
+                data-flow-active={active ? "true" : "false"}
+                onPointerEnter={() => setHoveredFlowKey(flowKey)}
+                onPointerLeave={() => setHoveredFlowKey(null)}
+              >
                 <path
                   d={`M 10 ${y1} C 150 ${y1}, 150 ${y2}, 280 ${y2} S 430 ${y3}, 550 ${y3}`}
                   fill="none"
-                  stroke={active ? "#c4452d" : "#8d877d"}
-                  strokeWidth={width}
+                  stroke={isHovered || active ? "#c4452d" : "#8d877d"}
+                  strokeWidth={isHovered ? width + 2.6 : width}
                   strokeLinecap="round"
-                  opacity={active ? 0.74 : 0.18}
+                  opacity={isHovered ? 0.92 : isMuted ? 0.14 : 0.74}
                 />
               </g>
             );

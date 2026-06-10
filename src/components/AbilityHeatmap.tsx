@@ -18,13 +18,15 @@ export function AbilityHeatmap({ activeRoleId }: AbilityHeatmapProps) {
         {abilityDimensions.map((ability) => (
           <span className="heatmap-axis" key={ability.id}>{ability.label}</span>
         ))}
-        {roleProfiles.map((role) => (
-          <div className="heatmap-row" key={role.id}>
-            <strong className={role.id === activeRoleId ? "is-active" : ""}>{role.name}</strong>
+        {roleProfiles.map((role) => {
+          const isActive = role.id === activeRoleId;
+          return (
+          <div className={`heatmap-row ${isActive ? "is-active" : ""}`} data-role-id={role.id} key={role.id}>
+            <strong className={isActive ? "is-active" : ""}>{role.name}</strong>
             {roleAbilityHeatmap[role.id].map((value, index) => (
               <span
                 key={`${role.id}-${abilityDimensions[index].id}`}
-                className="heatmap-cell"
+                className={`heatmap-cell ${isActive ? "is-active" : ""}`}
                 style={{ "--heat": value } as CSSProperties}
                 aria-label={`${role.name} ${abilityDimensions[index].label} ${value}`}
               >
@@ -32,7 +34,8 @@ export function AbilityHeatmap({ activeRoleId }: AbilityHeatmapProps) {
               </span>
             ))}
           </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

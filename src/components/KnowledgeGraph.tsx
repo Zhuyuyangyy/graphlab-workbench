@@ -1,7 +1,6 @@
 import { useMemo, useRef, useState, type PointerEvent } from "react";
 import { forceCenter, forceCollide, forceLink, forceManyBody, forceSimulation } from "d3-force";
 import { graphEdges, graphNodes } from "../data/workbench";
-import { getFocusedNodeIds } from "../lib/analysis";
 import type { GraphNode, RoleId, RoleProfile, SourceId } from "../types/domain";
 import { AbilityHeatmap } from "./AbilityHeatmap";
 import { EvidenceFlowChart } from "./EvidenceFlowChart";
@@ -59,12 +58,24 @@ function getSvgPoint(svg: SVGSVGElement, clientX: number, clientY: number) {
   return point.matrixTransform(matrix.inverse());
 }
 
+function getOneHopNodeIds(roleId: RoleId, activeSources: Set<SourceId>) {
+  const related = new Set<string>([roleId, ...activeSources]);
+  graphEdges.forEach(([source, target]) => {
+    if (source === roleId) related.add(target);
+    if (target === roleId) related.add(source);
+  });
+  return related;
+}
+
 export function KnowledgeGraph({ activeRole, activeSources, onSelectRole, year }: KnowledgeGraphProps) {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [positionOverrides, setPositionOverrides] = useState<Record<string, { x: number; y: number }>>({});
-  const focusedIds = getFocusedNodeIds(activeRole.id, activeSources);
+  const focusedIds = useMemo(
+    () => getOneHopNodeIds(activeRole.id, activeSources),
+    [activeRole.id, activeSources],
+  );
   const layoutNodes = useMemo(buildForceLayout, []);
   const positionById = useMemo(() => {
     return new Map(layoutNodes.map((node) => {
@@ -126,10 +137,12 @@ export function KnowledgeGraph({ activeRole, activeSources, onSelectRole, year }
               const from = positionById.get(fromId);
               const to = positionById.get(toId);
               if (!from || !to) return null;
-              const isRelevant = focusedIds.has(fromId) && focusedIds.has(toId);
+              const isRoleLink = fromId === activeRole.id || toId === activeRole.id;
+              const isHoverLink = hoveredId ? fromId === hoveredId || toId === hoveredId : false;
+              const isRelevant = hoveredId ? isHoverLink : isRoleLink;
               const isDim = hoveredId
                 ? !neighborIds.has(fromId) || !neighborIds.has(toId)
-                : !focusedIds.has(fromId) && !focusedIds.has(toId);
+                : !focusedIds.has(fromId) || !focusedIds.has(toId);
               return (
                 <line
                   key={`${fromId}-${toId}`}
@@ -138,6 +151,7 @@ export function KnowledgeGraph({ activeRole, activeSources, onSelectRole, year }
                   x2={to.x}
                   y2={to.y}
                   className={`graph-link ${isRelevant ? "is-focus" : ""} ${isDim ? "is-dim" : ""}`}
+                  data-focus-link={isRelevant ? "true" : "false"}
                 />
               );
             })}
@@ -148,13 +162,16 @@ export function KnowledgeGraph({ activeRole, activeSources, onSelectRole, year }
               const isRole = roleNodeIds.includes(node.id as RoleId);
               const isDim = hoveredId
                 ? !neighborIds.has(node.id)
-                : !focusedIds.has(node.id) && node.type !== "data";
+                : !focusedIds.has(node.id);
+              const isHoverFocus = hoveredId ? neighborIds.has(node.id) : false;
+              const shouldShowLabel = isRole || isHoverFocus || (node.type === "skill" && focusedIds.has(node.id));
               const radius = getNodeRadius(node, year);
               return (
                 <g
                   key={node.id}
                   data-node-id={node.id}
-                  className={`graph-node ${isDim ? "is-dim" : ""}`}
+                  data-node-type={node.type}
+                  className={`graph-node ${isDim ? "is-dim" : ""} ${shouldShowLabel ? "has-label" : ""} ${node.id === activeRole.id ? "is-active-role" : ""}`}
                   transform={`translate(${position.x} ${position.y})`}
                   onClick={() => {
                     if (isRole) onSelectRole(node.id as RoleId);

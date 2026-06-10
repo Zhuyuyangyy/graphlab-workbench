@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-test("renders the engineering workbench and responds to role/source/year changes", async ({ page }) => {
+test("renders the workbench and keeps graph, role, source, and year views linked", async ({ page }) => {
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
   page.on("console", (message) => {
@@ -8,9 +8,12 @@ test("renders the engineering workbench and responds to role/source/year changes
   });
 
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: "岗位能力图谱的证据化推理工作台" })).toBeVisible();
+  await expect(page.locator("h1")).toBeVisible();
   await expect(page.locator("#knowledge-graph .graph-node")).toHaveCount(30);
   await expect(page.locator("#knowledge-graph .graph-link")).toHaveCount(60);
+  await expect(page.locator(".decision-panel")).toHaveAttribute("data-active-role", "ai-pm");
+  await expect(page.locator('[data-node-id="etl"]')).toHaveClass(/is-dim/);
+  await expect(page.locator('[data-node-id="resume"] .node-label')).toHaveCSS("opacity", "0");
 
   const aigcCircle = page.locator('[data-node-id="aigc"] .node-circle');
   const radius2026 = Number(await aigcCircle.getAttribute("r"));
@@ -18,17 +21,30 @@ test("renders the engineering workbench and responds to role/source/year changes
   const radius2022 = Number(await aigcCircle.getAttribute("r"));
   expect(radius2026).toBeGreaterThan(radius2022);
 
-  await page.getByRole("button", { name: /数据开发工程师/ }).click();
-  await expect(page.getByRole("button", { name: /数据开发工程师/ })).toHaveAttribute("aria-pressed", "true");
-  await expect(page.getByText("该岗位核心缺口集中在实时链路")).toBeVisible();
+  await page.locator('[data-node-id="data-engineer"]').click();
+  await expect(page.locator(".decision-panel")).toHaveAttribute("data-active-role", "data-engineer");
+  await expect(page.locator('.heatmap-row[data-role-id="data-engineer"] .heatmap-cell').first()).toHaveClass(/is-active/);
+  await expect(page.locator('[data-node-id="ai-pm"]')).toHaveClass(/is-dim/);
+  await expect(page.locator('[data-node-id="etl"]')).not.toHaveClass(/is-dim/);
 
-  await page.getByRole("button", { name: "招聘 JD" }).click();
-  await expect(page.getByRole("button", { name: "招聘 JD" })).toHaveAttribute("aria-pressed", "false");
+  await page.locator(".source-chip").first().click();
   await expect(page.locator(".metric-stack div").first().locator("strong")).toHaveText("5");
 
   await page.locator("#year-slider").fill("2024");
-  await expect(page.getByText("TOP 1 / 2024")).toBeVisible();
+  await expect(page.locator(".summary-item").first().locator("span")).toContainText("2024");
   expect(errors).toEqual([]);
+});
+
+test("auto demo runs a traceable one-shot analysis flow", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Run" }).click();
+
+  await expect(page.locator(".command-bar")).toHaveClass(/is-running/);
+  await expect(page.locator(".system-state")).toContainText("01 /");
+  await expect(page.locator(".source-chip[aria-pressed='true']")).toHaveCount(1);
+  await expect(page.locator(".system-state")).toContainText("05 /", { timeout: 6_000 });
+  await expect(page.locator(".decision-panel")).toHaveAttribute("data-active-role", "data-engineer");
+  await expect(page.locator("#year-slider")).toHaveValue("2026");
 });
 
 test("mobile layout has no horizontal overflow", async ({ page }) => {

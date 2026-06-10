@@ -12,7 +12,7 @@ const radarLabels = ["业务", "数据", "建模", "工程", "表达"];
 
 export function DecisionPanel({ activeRole, onSelectRole, roles }: DecisionPanelProps) {
   return (
-    <aside className="decision-panel">
+    <aside className="decision-panel" data-active-role={activeRole.id}>
       <div className="panel-heading">
         <span>Decision Docket</span>
         <h2>目标岗位推演</h2>
@@ -34,12 +34,12 @@ export function DecisionPanel({ activeRole, onSelectRole, roles }: DecisionPanel
           </button>
         ))}
       </div>
-      <div className="ability-card">
+      <div className="ability-card" key={activeRole.id}>
         <div className="ability-head">
           <span>能力结构</span>
           <strong>{activeRole.name}</strong>
         </div>
-        <RadarChart labels={radarLabels} values={activeRole.radar} />
+        <RadarChart labels={radarLabels} values={activeRole.radar} benchmark={activeRole.demand} />
       </div>
       <SkillGapBars role={activeRole} />
       <div className="decision-note">
