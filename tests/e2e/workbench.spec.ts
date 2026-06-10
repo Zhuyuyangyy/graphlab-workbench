@@ -47,6 +47,39 @@ test("auto demo runs a traceable one-shot analysis flow", async ({ page }) => {
   await expect(page.locator("#year-slider")).toHaveValue("2026");
 });
 
+test("opens evidence drilldown drawer from graph nodes and jumps back to linked roles", async ({ page }) => {
+  await page.goto("/");
+
+  await page.locator('[data-node-id="aigc"]').click();
+  await expect(page.locator(".evidence-drawer")).toBeVisible();
+  await expect(page.locator(".drawer-source-group")).toHaveCount(4);
+  await expect(page.locator(".evidence-item")).toHaveCount(4);
+  await page.keyboard.press("Escape");
+  await expect(page.locator(".evidence-drawer")).toHaveCount(0);
+
+  await page.locator('[data-node-id="job"]').click();
+  await expect(page.locator(".evidence-drawer")).toBeVisible();
+  await page.locator(".drawer-close").click();
+  await expect(page.locator(".evidence-drawer")).toHaveCount(0);
+
+  await page.locator('[data-node-id="stream"]').click();
+  await expect(page.locator(".evidence-drawer")).toBeVisible();
+  await expect(page.locator(".drawer-source-group")).toHaveCount(3);
+  await page.locator(".drawer-role-grid button").first().click();
+  await expect(page.locator(".evidence-drawer")).toHaveCount(0);
+  await expect(page.locator(".decision-panel")).toHaveAttribute("data-active-role", "data-engineer");
+  await expect(page.locator('[data-node-id="stream"]')).not.toHaveClass(/is-dim/);
+
+  await page.locator('[data-node-id="report"]').click();
+  await expect(page.locator(".evidence-drawer")).toBeVisible();
+  if ((page.viewportSize()?.width ?? 0) > 768) {
+    await page.locator(".drawer-scrim").click({ position: { x: 20, y: 20 } });
+  } else {
+    await page.keyboard.press("Escape");
+  }
+  await expect(page.locator(".evidence-drawer")).toHaveCount(0);
+});
+
 test("mobile layout has no horizontal overflow", async ({ page }) => {
   await page.goto("/");
   await page.waitForSelector("#knowledge-graph .graph-node");

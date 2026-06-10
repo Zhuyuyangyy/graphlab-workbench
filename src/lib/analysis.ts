@@ -1,5 +1,6 @@
-import { evidenceSources, roleProfiles, trendSeries, trendYears } from "../data/workbench";
-import type { RoleId, SourceId, TrendSummaryItem } from "../types/domain";
+import { drilldownDefinitions } from "../data/evidenceDrilldown";
+import { evidenceSources, graphNodes, roleProfiles, trendSeries, trendYears } from "../data/workbench";
+import type { GroupedDrilldownEvidence, RoleId, SourceId, TrendSummaryItem } from "../types/domain";
 
 export function getActiveRole(roleId: RoleId) {
   const role = roleProfiles.find((profile) => profile.id === roleId);
@@ -41,4 +42,32 @@ export function toggleSource(activeSources: Set<SourceId>, sourceId: SourceId) {
     next.add(sourceId);
   }
   return next;
+}
+
+export function getDrilldownForNode(nodeId: string) {
+  const node = graphNodes.find((item) => item.id === nodeId);
+  const definition = drilldownDefinitions.find((item) => item.nodeId === nodeId);
+
+  if (!node || !definition || node.type === "role") {
+    return null;
+  }
+
+  const groupedEvidence = evidenceSources
+    .map<GroupedDrilldownEvidence>((source) => ({
+      sourceId: source.id,
+      sourceName: source.name,
+      items: definition.evidences.filter((item) => item.sourceId === source.id),
+    }))
+    .filter((group) => group.items.length > 0);
+  const coveredSources = new Set(definition.evidences.map((item) => item.sourceId));
+  const relatedRoles = new Set(definition.evidences.flatMap((item) => item.roleIds));
+
+  return {
+    definition: definition.definition,
+    evidenceCount: definition.evidences.length,
+    groupedEvidence,
+    node,
+    relatedRoles: roleProfiles.filter((role) => relatedRoles.has(role.id)),
+    sourceCount: coveredSources.size,
+  };
 }

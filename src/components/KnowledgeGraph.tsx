@@ -8,6 +8,8 @@ import { EvidenceFlowChart } from "./EvidenceFlowChart";
 interface KnowledgeGraphProps {
   activeRole: RoleProfile;
   activeSources: Set<SourceId>;
+  drilldownNodeId: string | null;
+  onOpenDrilldown: (nodeId: string) => void;
   onSelectRole: (roleId: RoleId) => void;
   year: number;
 }
@@ -58,23 +60,30 @@ function getSvgPoint(svg: SVGSVGElement, clientX: number, clientY: number) {
   return point.matrixTransform(matrix.inverse());
 }
 
-function getOneHopNodeIds(roleId: RoleId, activeSources: Set<SourceId>) {
-  const related = new Set<string>([roleId, ...activeSources]);
+function getOneHopNodeIds(nodeId: string, activeSources: Set<SourceId>) {
+  const related = new Set<string>([nodeId, ...activeSources]);
   graphEdges.forEach(([source, target]) => {
-    if (source === roleId) related.add(target);
-    if (target === roleId) related.add(source);
+    if (source === nodeId) related.add(target);
+    if (target === nodeId) related.add(source);
   });
   return related;
 }
 
-export function KnowledgeGraph({ activeRole, activeSources, onSelectRole, year }: KnowledgeGraphProps) {
+export function KnowledgeGraph({
+  activeRole,
+  activeSources,
+  drilldownNodeId,
+  onOpenDrilldown,
+  onSelectRole,
+  year,
+}: KnowledgeGraphProps) {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [positionOverrides, setPositionOverrides] = useState<Record<string, { x: number; y: number }>>({});
   const focusedIds = useMemo(
-    () => getOneHopNodeIds(activeRole.id, activeSources),
-    [activeRole.id, activeSources],
+    () => getOneHopNodeIds(drilldownNodeId ?? activeRole.id, activeSources),
+    [activeRole.id, activeSources, drilldownNodeId],
   );
   const layoutNodes = useMemo(buildForceLayout, []);
   const positionById = useMemo(() => {
@@ -137,7 +146,8 @@ export function KnowledgeGraph({ activeRole, activeSources, onSelectRole, year }
               const from = positionById.get(fromId);
               const to = positionById.get(toId);
               if (!from || !to) return null;
-              const isRoleLink = fromId === activeRole.id || toId === activeRole.id;
+              const focusAnchorId = drilldownNodeId ?? activeRole.id;
+              const isRoleLink = fromId === focusAnchorId || toId === focusAnchorId;
               const isHoverLink = hoveredId ? fromId === hoveredId || toId === hoveredId : false;
               const isRelevant = hoveredId ? isHoverLink : isRoleLink;
               const isDim = hoveredId
@@ -164,17 +174,22 @@ export function KnowledgeGraph({ activeRole, activeSources, onSelectRole, year }
                 ? !neighborIds.has(node.id)
                 : !focusedIds.has(node.id);
               const isHoverFocus = hoveredId ? neighborIds.has(node.id) : false;
-              const shouldShowLabel = isRole || isHoverFocus || (node.type === "skill" && focusedIds.has(node.id));
+              const isDrilldownFocus = drilldownNodeId === node.id;
+              const shouldShowLabel = isRole || isHoverFocus || isDrilldownFocus || (node.type === "skill" && focusedIds.has(node.id));
               const radius = getNodeRadius(node, year);
               return (
                 <g
                   key={node.id}
                   data-node-id={node.id}
                   data-node-type={node.type}
-                  className={`graph-node ${isDim ? "is-dim" : ""} ${shouldShowLabel ? "has-label" : ""} ${node.id === activeRole.id ? "is-active-role" : ""}`}
+                  className={`graph-node ${isDim ? "is-dim" : ""} ${shouldShowLabel ? "has-label" : ""} ${node.id === activeRole.id ? "is-active-role" : ""} ${isDrilldownFocus ? "is-drilldown-focus" : ""}`}
                   transform={`translate(${position.x} ${position.y})`}
                   onClick={() => {
-                    if (isRole) onSelectRole(node.id as RoleId);
+                    if (isRole) {
+                      onSelectRole(node.id as RoleId);
+                    } else {
+                      onOpenDrilldown(node.id);
+                    }
                   }}
                   onPointerDown={(event) => {
                     event.currentTarget.setPointerCapture(event.pointerId);

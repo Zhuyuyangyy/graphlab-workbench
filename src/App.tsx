@@ -1,12 +1,14 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { CommandBar } from "./components/CommandBar";
 import { DecisionPanel } from "./components/DecisionPanel";
 import { DossierPanel } from "./components/DossierPanel";
+import { EvidenceDrawer } from "./components/EvidenceDrawer";
 import { EvolutionReview } from "./components/EvolutionReview";
 import { KnowledgeGraph } from "./components/KnowledgeGraph";
 import { MissionBoard } from "./components/MissionBoard";
 import { evidenceSources } from "./data/workbench";
 import { useWorkbenchModel } from "./hooks/useWorkbenchModel";
+import { getDrilldownForNode } from "./lib/analysis";
 import type { RoleId, SourceId } from "./types/domain";
 import "./styles/workbench.css";
 
@@ -38,6 +40,7 @@ export function App() {
   const model = useWorkbenchModel();
   const demoStepRef = useRef(0);
   const [demoStepLabel, setDemoStepLabel] = useState("Ready");
+  const [drilldownNodeId, setDrilldownNodeId] = useState<string | null>(null);
   const {
     activeRole,
     activeSources,
@@ -52,6 +55,10 @@ export function App() {
     trendSummary,
     year,
   } = model;
+  const drilldown = useMemo(
+    () => (drilldownNodeId ? getDrilldownForNode(drilldownNodeId) : null),
+    [drilldownNodeId],
+  );
 
   useEffect(() => {
     if (!isDemoRunning) {
@@ -66,6 +73,7 @@ export function App() {
       if (frame.roleId) setActiveRoleId(frame.roleId);
       if (frame.sourceIds) setActiveSources(new Set(frame.sourceIds));
       if (frame.year) setYear(frame.year);
+      setDrilldownNodeId(null);
       if (frame.scrollTarget) {
         document.getElementById(frame.scrollTarget)?.scrollIntoView({ behavior: "smooth", block: "start" });
       }
@@ -86,6 +94,12 @@ export function App() {
     setYear(2026);
     setIsDemoRunning(false);
     setDemoStepLabel("Ready");
+    setDrilldownNodeId(null);
+  }
+
+  function selectRole(roleId: RoleId) {
+    setActiveRoleId(roleId);
+    setDrilldownNodeId(null);
   }
 
   return (
@@ -112,14 +126,17 @@ export function App() {
             <KnowledgeGraph
               activeRole={activeRole}
               activeSources={activeSources}
-              onSelectRole={setActiveRoleId}
+              drilldownNodeId={drilldownNodeId}
+              onOpenDrilldown={setDrilldownNodeId}
+              onSelectRole={selectRole}
               year={year}
             />
-            <DecisionPanel activeRole={activeRole} onSelectRole={setActiveRoleId} roles={roles} />
+            <DecisionPanel activeRole={activeRole} onSelectRole={selectRole} roles={roles} />
           </section>
           <EvolutionReview onYearChange={setYear} trendSummary={trendSummary} year={year} />
         </main>
       </div>
+      <EvidenceDrawer drilldown={drilldown} onClose={() => setDrilldownNodeId(null)} onSelectRole={selectRole} />
     </>
   );
 }

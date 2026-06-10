@@ -59,3 +59,21 @@ export interface EvidenceFlow {
   roleId: RoleId;
   value: number;
 }
+
+export interface DrilldownEvidence {
+  sourceId: SourceId;
+  excerpt: string;
+  roleIds: RoleId[];
+}
+
+export interface DrilldownDefinition {
+  nodeId: string;
+  definition: string;
+  evidences: DrilldownEvidence[];
+}
+
+export interface GroupedDrilldownEvidence {
+  sourceId: SourceId;
+  sourceName: string;
+  items: DrilldownEvidence[];
+}
