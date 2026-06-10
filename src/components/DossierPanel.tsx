@@ -4,6 +4,7 @@ import { SourceContributionRing } from "./SourceContributionRing";
 
 interface DossierPanelProps {
   activeSources: Set<SourceId>;
+  isStoryActive: boolean;
   matchScore: number;
   onToggleSource: (sourceId: SourceId) => void;
   role: RoleProfile;
@@ -13,6 +14,7 @@ interface DossierPanelProps {
 
 export function DossierPanel({
   activeSources,
+  isStoryActive,
   matchScore,
   onToggleSource,
   role,
@@ -20,7 +22,11 @@ export function DossierPanel({
   year,
 }: DossierPanelProps) {
   return (
-    <aside className="dossier-panel" id="sources">
+    <aside className={`dossier-panel story-zone ${isStoryActive ? "is-story-active" : ""}`} id="sources">
+      <div className="story-badge">
+        <span>①</span>
+        <strong>接证据</strong>
+      </div>
       <div className="panel-heading">
         <span>Evidence Intake</span>
         <h2>证据接入与清洗</h2>

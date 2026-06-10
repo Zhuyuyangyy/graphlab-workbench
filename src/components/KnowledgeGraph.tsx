@@ -9,6 +9,7 @@ interface KnowledgeGraphProps {
   activeRole: RoleProfile;
   activeSources: Set<SourceId>;
   drilldownNodeId: string | null;
+  isStoryActive: boolean;
   onOpenDrilldown: (nodeId: string) => void;
   onSelectRole: (roleId: RoleId) => void;
   syncPulse: number;
@@ -81,6 +82,7 @@ export function KnowledgeGraph({
   activeRole,
   activeSources,
   drilldownNodeId,
+  isStoryActive,
   onOpenDrilldown,
   onSelectRole,
   syncPulse,
@@ -125,7 +127,11 @@ export function KnowledgeGraph({
   }
 
   return (
-    <article className="graph-panel" id="graph" data-sync-pulse={syncPulse}>
+    <article className={`graph-panel story-zone ${isStoryActive ? "is-story-active" : ""}`} id="graph" data-sync-pulse={syncPulse}>
+      <div className="story-badge">
+        <span>②</span>
+        <strong>建图谱</strong>
+      </div>
       <div className="panel-heading graph-heading">
         <div>
           <span>Reasoning Canvas</span>

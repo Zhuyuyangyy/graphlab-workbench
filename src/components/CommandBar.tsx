@@ -1,11 +1,29 @@
+import type { StorySection } from "../types/story";
+
 interface CommandBarProps {
+  activeSection: StorySection;
   demoStepLabel: string;
   isDemoRunning: boolean;
+  onNavigate: (section: StorySection) => void;
   onReset: () => void;
   onToggleDemo: () => void;
 }
 
-export function CommandBar({ demoStepLabel, isDemoRunning, onReset, onToggleDemo }: CommandBarProps) {
+const storyNav: Array<{ id: StorySection; label: string; step: string }> = [
+  { id: "sources", label: "接证据", step: "①" },
+  { id: "graph", label: "建图谱", step: "②" },
+  { id: "decision", label: "推岗位", step: "③" },
+  { id: "evolution", label: "看演化", step: "④" },
+];
+
+export function CommandBar({
+  activeSection,
+  demoStepLabel,
+  isDemoRunning,
+  onNavigate,
+  onReset,
+  onToggleDemo,
+}: CommandBarProps) {
   return (
     <header className={`command-bar ${isDemoRunning ? "is-running" : ""}`}>
       <a className="brand-block" href="#overview" aria-label="GraphLab 总览">
@@ -15,10 +33,22 @@ export function CommandBar({ demoStepLabel, isDemoRunning, onReset, onToggleDemo
           <small>Evidence Intelligence</small>
         </span>
       </a>
-      <nav className="command-nav" aria-label="页面导航">
-        <a href="#sources">证据接入</a>
-        <a href="#graph">图谱推理</a>
-        <a href="#evolution">演化审阅</a>
+      <nav className="command-nav" aria-label="录屏故事导航">
+        {storyNav.map((item) => (
+          <a
+            key={item.id}
+            aria-current={activeSection === item.id ? "step" : undefined}
+            className={activeSection === item.id ? "is-active" : ""}
+            href={`#${item.id}`}
+            onClick={(event) => {
+              event.preventDefault();
+              onNavigate(item.id);
+            }}
+          >
+            <span>{item.step}</span>
+            {item.label}
+          </a>
+        ))}
       </nav>
       <div className="command-actions">
         <span className="system-state">{isDemoRunning ? demoStepLabel : "方案可录屏"}</span>

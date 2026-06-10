@@ -9,6 +9,11 @@ test("renders the workbench and keeps graph, role, source, and year views linked
 
   await page.goto("/");
   await expect(page.locator("h1")).toBeVisible();
+  await expect(page.locator(".command-nav a")).toHaveCount(4);
+  await expect(page.locator(".story-badge")).toHaveCount(4);
+  await page.getByRole("link", { name: /推岗位/ }).click();
+  await expect(page.locator(".decision-panel")).toHaveClass(/is-story-active/);
+  await expect(page.locator('.command-nav a[href="#decision"]')).toHaveClass(/is-active/);
   await expect(page.locator("#knowledge-graph .graph-node")).toHaveCount(30);
   await expect(page.locator("#knowledge-graph .graph-link")).toHaveCount(60);
   await expect(page.locator(".decision-panel")).toHaveAttribute("data-active-role", "ai-pm");
@@ -48,9 +53,13 @@ test("auto demo runs a traceable one-shot analysis flow", async ({ page }) => {
   await page.getByRole("button", { name: "Run" }).click();
 
   await expect(page.locator(".command-bar")).toHaveClass(/is-running/);
+  await expect(page.locator(".guide-callout")).toBeVisible();
   await expect(page.locator(".system-state")).toContainText("01 /");
+  await expect(page.locator(".guide-callout")).toContainText("接入证据");
   await expect(page.locator(".source-chip[aria-pressed='true']")).toHaveCount(1);
   await expect(page.locator(".system-state")).toContainText("05 /", { timeout: 6_000 });
+  await expect(page.locator(".guide-callout")).toContainText("联动切换");
+  await expect(page.locator(".decision-panel")).toHaveClass(/is-story-active/);
   await expect(page.locator(".decision-panel")).toHaveAttribute("data-active-role", "data-engineer");
   await expect(page.locator("#year-slider")).toHaveValue("2026");
 });

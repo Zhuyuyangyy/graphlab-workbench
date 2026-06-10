@@ -4,6 +4,7 @@ import type { RoleId, RoleProfile } from "../types/domain";
 
 interface DecisionPanelProps {
   activeRole: RoleProfile;
+  isStoryActive: boolean;
   onSelectRole: (roleId: RoleId) => void;
   roles: RoleProfile[];
   syncPulse: number;
@@ -11,9 +12,18 @@ interface DecisionPanelProps {
 
 const radarLabels = ["业务", "数据", "建模", "工程", "表达"];
 
-export function DecisionPanel({ activeRole, onSelectRole, roles, syncPulse }: DecisionPanelProps) {
+export function DecisionPanel({ activeRole, isStoryActive, onSelectRole, roles, syncPulse }: DecisionPanelProps) {
   return (
-    <aside className="decision-panel" data-active-role={activeRole.id} data-sync-pulse={syncPulse}>
+    <aside
+      className={`decision-panel story-zone ${isStoryActive ? "is-story-active" : ""}`}
+      data-active-role={activeRole.id}
+      data-sync-pulse={syncPulse}
+      id="decision"
+    >
+      <div className="story-badge">
+        <span>③</span>
+        <strong>推岗位</strong>
+      </div>
       <div className="panel-heading">
         <span>Decision Docket</span>
         <h2>目标岗位推演</h2>

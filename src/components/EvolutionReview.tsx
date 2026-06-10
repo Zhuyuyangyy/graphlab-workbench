@@ -4,16 +4,21 @@ import { SlopeChart } from "./SlopeChart";
 import { TrendChart } from "./TrendChart";
 
 interface EvolutionReviewProps {
+  isStoryActive: boolean;
   onYearChange: (year: number) => void;
   syncPulse: number;
   trendSummary: TrendSummaryItem[];
   year: number;
 }
 
-export function EvolutionReview({ onYearChange, syncPulse, trendSummary, year }: EvolutionReviewProps) {
+export function EvolutionReview({ isStoryActive, onYearChange, syncPulse, trendSummary, year }: EvolutionReviewProps) {
   return (
     <section className="review-grid" id="evolution">
-      <article className="evolution-panel" data-sync-pulse={syncPulse}>
+      <article className={`evolution-panel story-zone ${isStoryActive ? "is-story-active" : ""}`} data-sync-pulse={syncPulse}>
+        <div className="story-badge">
+          <span>④</span>
+          <strong>看演化</strong>
+        </div>
         <div className="panel-heading review-heading">
           <div>
             <span>Evolution Review</span>
