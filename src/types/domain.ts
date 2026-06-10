@@ -32,6 +32,7 @@ export interface GraphNode {
   y: number;
   r: number;
   color: string;
+  yearlyDemand?: number[];
 }
 
 export type GraphEdge = readonly [string, string];

@@ -9,8 +9,14 @@ test("renders the engineering workbench and responds to role/source/year changes
 
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "岗位能力图谱的证据化推理工作台" })).toBeVisible();
-  await expect(page.locator("#knowledge-graph .graph-node")).toHaveCount(19);
-  await expect(page.locator("#knowledge-graph .graph-link")).toHaveCount(27);
+  await expect(page.locator("#knowledge-graph .graph-node")).toHaveCount(30);
+  await expect(page.locator("#knowledge-graph .graph-link")).toHaveCount(60);
+
+  const aigcCircle = page.locator('[data-node-id="aigc"] .node-circle');
+  const radius2026 = Number(await aigcCircle.getAttribute("r"));
+  await page.locator("#year-slider").fill("2022");
+  const radius2022 = Number(await aigcCircle.getAttribute("r"));
+  expect(radius2026).toBeGreaterThan(radius2022);
 
   await page.getByRole("button", { name: /数据开发工程师/ }).click();
   await expect(page.getByRole("button", { name: /数据开发工程师/ })).toHaveAttribute("aria-pressed", "true");

@@ -77,6 +77,7 @@ export function App() {
               activeRole={activeRole}
               activeSources={activeSources}
               onSelectRole={setActiveRoleId}
+              year={year}
             />
             <DecisionPanel activeRole={activeRole} onSelectRole={setActiveRoleId} roles={roles} />
           </section>

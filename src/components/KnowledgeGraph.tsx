@@ -1,6 +1,8 @@
+import { useMemo, useRef, useState, type PointerEvent } from "react";
+import { forceCenter, forceCollide, forceLink, forceManyBody, forceSimulation } from "d3-force";
 import { graphEdges, graphNodes } from "../data/workbench";
 import { getFocusedNodeIds } from "../lib/analysis";
-import type { RoleId, RoleProfile, SourceId } from "../types/domain";
+import type { GraphNode, RoleId, RoleProfile, SourceId } from "../types/domain";
 import { AbilityHeatmap } from "./AbilityHeatmap";
 import { EvidenceFlowChart } from "./EvidenceFlowChart";
 
@@ -8,12 +10,89 @@ interface KnowledgeGraphProps {
   activeRole: RoleProfile;
   activeSources: Set<SourceId>;
   onSelectRole: (roleId: RoleId) => void;
+  year: number;
 }
 
 const roleNodeIds: RoleId[] = ["ai-pm", "data-engineer", "knowledge-analyst"];
 
-export function KnowledgeGraph({ activeRole, activeSources, onSelectRole }: KnowledgeGraphProps) {
+type LayoutNode = GraphNode & { x: number; y: number };
+
+const yearIndexByValue: Record<number, number> = {
+  2022: 0,
+  2023: 1,
+  2024: 2,
+  2025: 3,
+  2026: 4,
+};
+
+function buildForceLayout() {
+  const nodes: LayoutNode[] = graphNodes.map((node) => ({ ...node }));
+  const links = graphEdges.map(([source, target]) => ({ source, target }));
+
+  forceSimulation(nodes)
+    .force("link", forceLink<LayoutNode, { source: string; target: string }>(links).id((node) => node.id).distance(92).strength(0.48))
+    .force("charge", forceManyBody().strength(-380))
+    .force("collide", forceCollide<LayoutNode>().radius((node) => node.r + 18).strength(0.92))
+    .force("center", forceCenter(460, 280))
+    .stop()
+    .tick(220);
+
+  return nodes.map((node) => ({
+    ...node,
+    x: Math.max(54, Math.min(866, node.x)),
+    y: Math.max(54, Math.min(506, node.y)),
+  }));
+}
+
+function getNodeRadius(node: GraphNode, year: number) {
+  if (!node.yearlyDemand) return node.r;
+  const demand = node.yearlyDemand[yearIndexByValue[year] ?? 4];
+  return Math.round(18 + demand * 0.24);
+}
+
+function getSvgPoint(svg: SVGSVGElement, clientX: number, clientY: number) {
+  const point = svg.createSVGPoint();
+  point.x = clientX;
+  point.y = clientY;
+  const matrix = svg.getScreenCTM();
+  if (!matrix) return point;
+  return point.matrixTransform(matrix.inverse());
+}
+
+export function KnowledgeGraph({ activeRole, activeSources, onSelectRole, year }: KnowledgeGraphProps) {
+  const svgRef = useRef<SVGSVGElement | null>(null);
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const [positionOverrides, setPositionOverrides] = useState<Record<string, { x: number; y: number }>>({});
   const focusedIds = getFocusedNodeIds(activeRole.id, activeSources);
+  const layoutNodes = useMemo(buildForceLayout, []);
+  const positionById = useMemo(() => {
+    return new Map(layoutNodes.map((node) => {
+      const override = positionOverrides[node.id];
+      return [node.id, { ...node, x: override?.x ?? node.x, y: override?.y ?? node.y }] as const;
+    }));
+  }, [layoutNodes, positionOverrides]);
+  const neighborIds = useMemo(() => {
+    if (!hoveredId) return new Set<string>();
+    const related = new Set<string>([hoveredId]);
+    graphEdges.forEach(([source, target]) => {
+      if (source === hoveredId) related.add(target);
+      if (target === hoveredId) related.add(source);
+    });
+    return related;
+  }, [hoveredId]);
+
+  function updateDragPosition(event: PointerEvent<SVGSVGElement>) {
+    if (!draggingId || !svgRef.current) return;
+    const point = getSvgPoint(svgRef.current, event.clientX, event.clientY);
+    setPositionOverrides((current) => ({
+      ...current,
+      [draggingId]: {
+        x: Math.max(44, Math.min(876, point.x)),
+        y: Math.max(44, Math.min(516, point.y)),
+      },
+    }));
+  }
 
   return (
     <article className="graph-panel" id="graph">
@@ -29,14 +108,28 @@ export function KnowledgeGraph({ activeRole, activeSources, onSelectRole }: Know
         </div>
       </div>
       <div className="graph-stage">
-        <svg id="knowledge-graph" viewBox="0 0 920 560" role="img" aria-label="岗位能力知识图谱">
+        <svg
+          id="knowledge-graph"
+          ref={svgRef}
+          viewBox="0 0 920 560"
+          role="img"
+          aria-label="可拖拽力导向岗位能力知识图谱"
+          onPointerMove={updateDragPosition}
+          onPointerUp={() => setDraggingId(null)}
+          onPointerLeave={() => {
+            setDraggingId(null);
+            setHoveredId(null);
+          }}
+        >
           <g>
             {graphEdges.map(([fromId, toId]) => {
-              const from = graphNodes.find((node) => node.id === fromId);
-              const to = graphNodes.find((node) => node.id === toId);
+              const from = positionById.get(fromId);
+              const to = positionById.get(toId);
               if (!from || !to) return null;
               const isRelevant = focusedIds.has(fromId) && focusedIds.has(toId);
-              const isDim = !focusedIds.has(fromId) && !focusedIds.has(toId);
+              const isDim = hoveredId
+                ? !neighborIds.has(fromId) || !neighborIds.has(toId)
+                : !focusedIds.has(fromId) && !focusedIds.has(toId);
               return (
                 <line
                   key={`${fromId}-${toId}`}
@@ -50,20 +143,31 @@ export function KnowledgeGraph({ activeRole, activeSources, onSelectRole }: Know
             })}
           </g>
           <g>
-            {graphNodes.map((node) => {
+            {layoutNodes.map((node) => {
+              const position = positionById.get(node.id) ?? node;
               const isRole = roleNodeIds.includes(node.id as RoleId);
-              const isDim = !focusedIds.has(node.id) && node.type !== "data";
+              const isDim = hoveredId
+                ? !neighborIds.has(node.id)
+                : !focusedIds.has(node.id) && node.type !== "data";
+              const radius = getNodeRadius(node, year);
               return (
                 <g
                   key={node.id}
+                  data-node-id={node.id}
                   className={`graph-node ${isDim ? "is-dim" : ""}`}
-                  transform={`translate(${node.x} ${node.y})`}
+                  transform={`translate(${position.x} ${position.y})`}
                   onClick={() => {
                     if (isRole) onSelectRole(node.id as RoleId);
                   }}
+                  onPointerDown={(event) => {
+                    event.currentTarget.setPointerCapture(event.pointerId);
+                    setDraggingId(node.id);
+                  }}
+                  onPointerEnter={() => setHoveredId(node.id)}
+                  onPointerLeave={() => setHoveredId(null)}
                 >
-                  {node.id === activeRole.id ? <circle r={node.r + 12} className="pulse-ring" /> : null}
-                  <circle r={node.r} fill={node.color} className="node-circle" />
+                  {node.id === activeRole.id ? <circle r={radius + 12} className="pulse-ring" /> : null}
+                  <circle r={radius} fill={node.color} className="node-circle" />
                   <text y={-4} textAnchor="middle" className="node-label">{node.label}</text>
                   <text y={16} textAnchor="middle" className="node-sub">{node.sub}</text>
                 </g>
