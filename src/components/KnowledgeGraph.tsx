@@ -18,6 +18,13 @@ interface KnowledgeGraphProps {
 const roleNodeIds: RoleId[] = ["ai-pm", "data-engineer", "knowledge-analyst"];
 
 type LayoutNode = GraphNode & { x: number; y: number };
+type InsightLayer = "trail" | "heatmap" | "flow";
+
+const insightLayers: Array<{ id: InsightLayer; label: string }> = [
+  { id: "trail", label: "证据摘要" },
+  { id: "heatmap", label: "热力矩阵" },
+  { id: "flow", label: "证据流向" },
+];
 
 const yearIndexByValue: Record<number, number> = {
   2022: 0,
@@ -82,6 +89,7 @@ export function KnowledgeGraph({
   const svgRef = useRef<SVGSVGElement | null>(null);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const [activeLayer, setActiveLayer] = useState<InsightLayer | null>(null);
   const [positionOverrides, setPositionOverrides] = useState<Record<string, { x: number; y: number }>>({});
   const focusedIds = useMemo(
     () => getOneHopNodeIds(drilldownNodeId ?? activeRole.id, activeSources),
@@ -216,22 +224,54 @@ export function KnowledgeGraph({
           <p>{activeRole.insight}</p>
         </div>
       </div>
-      <div className="evidence-trail" aria-label="证据链示例">
-        <div>
-          <span>JD 语句</span>
-          <strong>需要把 AIGC 能力转化为业务流程改造。</strong>
+
+      <div className="analysis-dock" aria-label="按需展开分析层">
+        <div className="analysis-dock-head">
+          <span>Progressive Layers</span>
+          <strong>默认只看图谱与焦点结论，需要时再展开支撑分析</strong>
         </div>
-        <div>
-          <span>课程映射</span>
-          <strong>产品原型、数据分析、知识工程进入同一能力簇。</strong>
-        </div>
-        <div>
-          <span>演化判断</span>
-          <strong>2024 后“场景产品化”增速超过传统工具技能。</strong>
+        <div className="analysis-tabs" role="tablist" aria-label="图谱支撑分析层">
+          {insightLayers.map((layer) => (
+            <button
+              key={layer.id}
+              type="button"
+              role="tab"
+              aria-selected={activeLayer === layer.id}
+              aria-controls={`analysis-layer-${layer.id}`}
+              className={activeLayer === layer.id ? "is-active" : ""}
+              onClick={() => setActiveLayer((current) => (current === layer.id ? null : layer.id))}
+            >
+              {layer.label}
+            </button>
+          ))}
         </div>
       </div>
-      <AbilityHeatmap activeRoleId={activeRole.id} syncPulse={syncPulse} />
-      <EvidenceFlowChart activeRoleId={activeRole.id} activeSources={activeSources} />
+      {activeLayer === "trail" ? (
+        <div className="evidence-trail analysis-layer" id="analysis-layer-trail" role="tabpanel" aria-label="证据链摘要">
+          <div>
+            <span>JD 语句</span>
+            <strong>需要把 AIGC 能力转化为业务流程改造。</strong>
+          </div>
+          <div>
+            <span>课程映射</span>
+            <strong>产品原型、数据分析、知识工程进入同一能力簇。</strong>
+          </div>
+          <div>
+            <span>演化判断</span>
+            <strong>2024 后“场景产品化”增速超过传统工具技能。</strong>
+          </div>
+        </div>
+      ) : null}
+      {activeLayer === "heatmap" ? (
+        <div className="analysis-layer" id="analysis-layer-heatmap" role="tabpanel">
+          <AbilityHeatmap activeRoleId={activeRole.id} syncPulse={syncPulse} />
+        </div>
+      ) : null}
+      {activeLayer === "flow" ? (
+        <div className="analysis-layer" id="analysis-layer-flow" role="tabpanel">
+          <EvidenceFlowChart activeRoleId={activeRole.id} activeSources={activeSources} />
+        </div>
+      ) : null}
     </article>
   );
 }

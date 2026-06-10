@@ -27,11 +27,15 @@ test("renders the workbench and keeps graph, role, source, and year views linked
   await expect(page.locator(".graph-panel")).toHaveAttribute("data-sync-pulse", "1");
   await expect(page.locator(".evolution-panel")).toHaveAttribute("data-sync-pulse", "1");
   await expect(page.locator('.role-card[data-role-id="data-engineer"]')).toHaveClass(/is-active/);
+  await expect(page.locator(".heatmap-panel")).toHaveCount(0);
+  await page.getByRole("tab", { name: "热力矩阵" }).click();
   await expect(page.locator('.heatmap-row[data-role-id="data-engineer"] .heatmap-cell').first()).toHaveClass(/is-active/);
   await expect(page.locator('[data-node-id="ai-pm"]')).toHaveClass(/is-dim/);
   await expect(page.locator('[data-node-id="etl"]')).not.toHaveClass(/is-dim/);
 
   await page.locator(".source-chip").first().click();
+  await expect(page.locator(".dossier-details summary")).toContainText("5 源");
+  await page.locator(".dossier-details summary").click();
   await expect(page.locator(".metric-stack div").first().locator("strong")).toHaveText("5");
 
   await page.locator("#year-slider").fill("2024");

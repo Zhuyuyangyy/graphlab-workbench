@@ -44,30 +44,36 @@ export function DossierPanel({
         ))}
       </div>
       <SourceContributionRing activeSources={activeSources} role={role} />
-      <div className="metric-stack" aria-label="关键指标">
-        <div>
-          <span>接入数据源</span>
-          <strong>{activeSources.size}</strong>
+      <details className="dossier-details">
+        <summary>
+          <span>指标与接入链路</span>
+          <strong>{activeSources.size} 源 / {skillEntityCount} 实体 / {matchScore}%</strong>
+        </summary>
+        <div className="metric-stack" aria-label="关键指标">
+          <div>
+            <span>接入数据源</span>
+            <strong>{activeSources.size}</strong>
+          </div>
+          <div>
+            <span>能力实体</span>
+            <strong>{skillEntityCount}</strong>
+          </div>
+          <div>
+            <span>岗位匹配率</span>
+            <strong>{matchScore}%</strong>
+          </div>
+          <div>
+            <span>趋势窗口</span>
+            <strong>{year}</strong>
+          </div>
         </div>
-        <div>
-          <span>能力实体</span>
-          <strong>{skillEntityCount}</strong>
+        <div className="intake-flow" aria-label="分析链路">
+          <span>原始文本</span>
+          <span>实体抽取</span>
+          <span>关系归并</span>
+          <span>图谱更新</span>
         </div>
-        <div>
-          <span>岗位匹配率</span>
-          <strong>{matchScore}%</strong>
-        </div>
-        <div>
-          <span>趋势窗口</span>
-          <strong>{year}</strong>
-        </div>
-      </div>
-      <div className="intake-flow" aria-label="分析链路">
-        <span>原始文本</span>
-        <span>实体抽取</span>
-        <span>关系归并</span>
-        <span>图谱更新</span>
-      </div>
+      </details>
     </aside>
   );
 }
